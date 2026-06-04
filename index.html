@@ -1,321 +1,499 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kas Keuangan</title>
-
-<style>
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:Arial,sans-serif;
-}
-
-body{
-background:#f5f5f5;
-padding:15px;
-max-width:600px;
-margin:auto;
-}
-
-.card{
-background:white;
-padding:15px;
-border-radius:15px;
-margin-bottom:15px;
-box-shadow:0 2px 10px rgba(0,0,0,.05);
-}
-
-h1{
-font-size:24px;
-margin-bottom:5px;
-}
-
-.small{
-font-size:13px;
-color:#666;
-}
-
-.balance{
-font-size:32px;
-font-weight:bold;
-color:#16a34a;
-margin-top:10px;
-}
-
-input,select{
-width:100%;
-padding:12px;
-margin-top:8px;
-border:1px solid #ddd;
-border-radius:10px;
-}
-
-button{
-width:100%;
-padding:12px;
-border:none;
-border-radius:10px;
-background:#16a34a;
-color:white;
-font-weight:bold;
-margin-top:10px;
-cursor:pointer;
-}
-
-button:hover{
-opacity:.9;
-}
-
-.tx{
-display:flex;
-justify-content:space-between;
-align-items:center;
-padding:10px 0;
-border-bottom:1px solid #eee;
-}
-
-.tx:last-child{
-border:none;
-}
-
-.masuk{
-color:#16a34a;
-font-weight:bold;
-}
-
-.keluar{
-color:#dc2626;
-font-weight:bold;
-}
-
-.delete{
-background:#dc2626;
-width:auto;
-padding:5px 10px;
-margin-top:0;
-font-size:12px;
-}
-
-.section-title{
-margin-bottom:10px;
-font-size:18px;
-font-weight:bold;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Keuangan Kita - Localhost Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Trik jitu penangkal auto-zoom iPhone (iOS) */
+        input, select, textarea {
+            font-size: 16px !important;
+        }
+    </style>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-800 pb-24">
 
-<div class="card">
-<h1 id="appName">Kas MPJ</h1>
-<p class="small">Aplikasi Keuangan Sederhana</p>
+    <header class="bg-emerald-600 text-white sticky top-0 z-50 shadow-md px-4 py-3 flex justify-between items-center">
+        <div>
+            <h1 id="header-app-name" class="text-md font-bold">Keuangan Kita</h1>
+            <p id="user-email" class="text-[9px] text-emerald-100 opacity-80">Mode Lokal (Tanpa Login)</p>
+        </div>
+        <div class="flex items-center space-x-2">
+            <input type="month" id="global-month" onchange="changeGlobalMonth()" class="bg-emerald-700 text-white text-xs rounded-lg px-2 py-1.5 font-semibold border border-emerald-500 focus:outline-none">
+        </div>
+    </header>
 
-<div class="balance" id="saldo">Rp 0</div>
-</div>
+    <main class="p-4 max-w-md mx-auto">
 
-<div class="card">
-<div class="section-title">Pengaturan</div>
+        <div id="tab-dashboard" class="tab-content space-y-4">
+            
+            <div class="bg-gradient-to-br from-emerald-500 to-teal-700 p-4 rounded-2xl shadow-sm text-white">
+                <h3 class="text-[10px] font-medium opacity-80 uppercase tracking-wider mb-1"><i class="fa-solid fa-wallet mr-1"></i> Total Saldo Saat Ini</h3>
+                <h2 id="dash-total-saldo" class="text-3xl font-black">Rp 0</h2>
+            </div>
 
-<input id="namaKas" placeholder="Nama Kas">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <h3 class="text-xs font-bold text-slate-400 uppercase mb-2">Realisasi Bulan Ini</h3>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="bg-emerald-50 p-3 rounded-xl">
+                        <span class="block text-[10px] text-emerald-600 font-semibold">Pemasukan (+)</span>
+                        <span id="dash-real-masuk" class="text-base font-black text-emerald-700">Rp 0</span>
+                    </div>
+                    <div class="bg-rose-50 p-3 rounded-xl">
+                        <span class="block text-[10px] text-rose-600 font-semibold">Pengeluaran (-)</span>
+                        <span id="dash-real-keluar" class="text-base font-black text-rose-700">Rp 0</span>
+                    </div>
+                </div>
+            </div>
 
-<button onclick="simpanNamaKas()">
-Simpan Nama Kas
-</button>
-</div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-3">
+                <h3 class="font-bold text-sm text-slate-700"><i class="fa-solid fa-pen-to-square text-emerald-500 mr-1"></i> Catat Realisasi Harian</h3>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="setTxType('pemasukan')" id="btn-tx-masuk" class="py-2 rounded-xl text-xs font-bold border-2 border-emerald-500 bg-emerald-50 text-emerald-600">Pemasukan</button>
+                    <button onclick="setTxType('pengeluaran')" id="btn-tx-keluar" class="py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-500">Pengeluaran</button>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="date" id="tx-date" class="p-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none">
+                    <select id="tx-account" class="p-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none"></select>
+                </div>
 
-<div class="card">
-<div class="section-title">Tambah Transaksi</div>
+                <div class="grid grid-cols-2 gap-2">
+                    <select id="tx-category" onchange="checkGoalTarget()" class="p-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none"></select>
+                    <input type="text" inputmode="numeric" id="tx-amount" oninput="formatRupiahInput(this)" placeholder="Jumlah (Rp)" class="p-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none">
+                </div>
 
-<input type="date" id="tanggal">
+                <div id="goal-target-container" class="hidden">
+                    <select id="tx-goal-id" class="w-full p-2.5 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-700 text-xs focus:outline-none">
+                    </select>
+                </div>
 
-<select id="jenis">
-<option value="masuk">Pemasukan</option>
-<option value="keluar">Pengeluaran</option>
-</select>
+                <input type="text" id="tx-desc" placeholder="Keterangan Tambahan" class="w-full p-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none">
+                <button onclick="saveTransaction()" class="w-full bg-emerald-600 text-white font-bold py-2.5 rounded-xl text-xs active:bg-emerald-700">Simpan Transaksi</button>
+            </div>
 
-<input id="kategori" placeholder="Kategori">
+            <div class="space-y-2">
+                <div class="flex justify-between items-center px-1">
+                    <h3 class="font-bold text-xs text-slate-600">Riwayat Transaksi</h3>
+                    <input type="date" id="filter-date" onchange="renderAll()" class="bg-white border border-slate-200 text-[11px] rounded-lg p-1 text-slate-600 focus:outline-none">
+                </div>
+                <div id="list-transaksi" class="space-y-2"></div>
+            </div>
+        </div>
 
-<input type="number" id="jumlah" placeholder="Jumlah">
+        <div id="tab-budgeting" class="tab-content space-y-4 hidden">
+            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 rounded-2xl shadow-sm">
+                <h3 class="text-xs opacity-80 uppercase tracking-wider font-semibold">Rencana Anggaran</h3>
+                <h4 id="budget-month-title" class="text-lg font-bold mt-1">Bulan -</h4>
+                <div class="grid grid-cols-2 gap-4 mt-3 pt-3 border-t border-blue-400/30 text-xs">
+                    <div>
+                        <span class="opacity-75 block">Target Pendapatan:</span>
+                        <input type="text" inputmode="numeric" id="budget-in" oninput="formatRupiahInput(this)" onchange="saveBudget()" class="bg-blue-700 text-white font-bold p-1 rounded w-full focus:outline-none mt-1" placeholder="0">
+                    </div>
+                    <div>
+                        <span class="opacity-75 block">Batas Pengeluaran:</span>
+                        <input type="text" inputmode="numeric" id="budget-out" oninput="formatRupiahInput(this)" onchange="saveBudget()" class="bg-blue-700 text-white font-bold p-1 rounded w-full focus:outline-none mt-1" placeholder="0">
+                    </div>
+                </div>
+            </div>
 
-<button onclick="tambahTransaksi()">
-Simpan Transaksi
-</button>
-</div>
+            <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+                <h3 class="font-bold text-sm text-slate-700">Evaluasi Anggaran Bulanan</h3>
+                <div>
+                    <div class="flex justify-between text-xs font-semibold mb-1"><span>Pemasukan Terpenuhi</span><span id="prog-in-text">0%</span></div>
+                    <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden"><div id="prog-in-bar" class="bg-emerald-500 h-full w-0"></div></div>
+                </div>
+                <div>
+                    <div class="flex justify-between text-xs font-semibold mb-1"><span>Pengeluaran Terpakai</span><span id="prog-out-text">0%</span></div>
+                    <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden"><div id="prog-out-bar" class="bg-amber-500 h-full w-0"></div></div>
+                </div>
+            </div>
+        </div>
 
-<div class="card">
-<div class="section-title">Riwayat Transaksi</div>
+        <div id="tab-tabungan" class="tab-content space-y-4 hidden">
+            <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-3">
+                <h3 class="font-bold text-sm text-slate-700"><i class="fa-solid fa-bullseye text-indigo-500 mr-1"></i> Tambah Goals Impian</h3>
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="text" id="goal-name" placeholder="Nama Tabungan" class="p-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none">
+                    <input type="text" inputmode="numeric" id="goal-target" oninput="formatRupiahInput(this)" placeholder="Target (Rp)" class="p-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none">
+                </div>
+                <button onclick="addGoal()" class="w-full bg-indigo-600 text-white font-bold py-2.5 rounded-xl text-xs active:bg-indigo-700">Tambah Impian</button>
+            </div>
+            <div id="list-goals" class="space-y-3"></div>
+        </div>
 
-<div id="listTransaksi">
-Belum ada transaksi
-</div>
-</div>
+        <div id="tab-settings" class="tab-content space-y-4 hidden">
+            
+            <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-3">
+                <h3 class="font-bold text-sm text-slate-700"><i class="fa-solid fa-signature text-emerald-500 mr-1"></i> Nama Aplikasi</h3>
+                <div class="flex space-x-2">
+                    <input type="text" id="setting-app-name" placeholder="Misal: Keuangan Wariz" class="flex-1 p-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none">
+                    <button onclick="saveAppName()" class="bg-emerald-600 text-white px-4 rounded-xl text-xs font-bold active:bg-emerald-700">Simpan</button>
+                </div>
+            </div>
 
-<script>
+            <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-3">
+                <h3 class="font-bold text-sm text-slate-700"><i class="fa-solid fa-wallet text-slate-500 mr-1"></i> Pos Rekening / Akun</h3>
+                <div class="flex space-x-2">
+                    <input type="text" id="new-account-name" placeholder="Nama Rekening Baru" class="flex-1 p-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none">
+                    <button onclick="addAccount()" class="bg-slate-800 text-white px-4 rounded-xl text-xs font-bold active:bg-slate-900">Tambah</button>
+                </div>
+                <div id="list-accounts" class="pt-2"></div>
+            </div>
 
-let db = JSON.parse(
-localStorage.getItem("kasData")
-) || {
-appName:"Kas MPJ",
-transactions:[]
-};
+            <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-3">
+                <h3 class="font-bold text-sm text-slate-700"><i class="fa-solid fa-arrow-down text-emerald-500 mr-1"></i> Kategori Pemasukan</h3>
+                <div class="flex space-x-2">
+                    <input type="text" id="new-incat-name" placeholder="Kategori Pemasukan Baru" class="flex-1 p-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none">
+                    <button onclick="addCategory('in')" class="bg-slate-800 text-white px-4 rounded-xl text-xs font-bold active:bg-slate-900">Tambah</button>
+                </div>
+                <div id="list-incat" class="pt-2"></div>
+            </div>
 
-document.getElementById("tanggal").valueAsDate =
-new Date();
+            <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-3">
+                <h3 class="font-bold text-sm text-slate-700"><i class="fa-solid fa-arrow-up text-rose-500 mr-1"></i> Kategori Pengeluaran</h3>
+                <div class="flex space-x-2">
+                    <input type="text" id="new-outcat-name" placeholder="Kategori Pengeluaran Baru" class="flex-1 p-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none">
+                    <button onclick="addCategory('out')" class="bg-slate-800 text-white px-4 rounded-xl text-xs font-bold active:bg-slate-900">Tambah</button>
+                </div>
+                <div id="list-outcat" class="pt-2"></div>
+            </div>
 
-function simpanDb(){
-localStorage.setItem(
-"kasData",
-JSON.stringify(db)
-);
-}
+            <button onclick="clearAllData()" class="w-full bg-rose-100 text-rose-600 font-bold py-3 rounded-2xl text-xs active:bg-rose-200 mb-8"><i class="fa-solid fa-trash-can mr-1"></i> Hapus / Reset Semua Data</button>
+        </div>
 
-function formatRupiah(angka){
-return "Rp " +
-Number(angka).toLocaleString("id-ID");
-}
+    </main>
 
-function simpanNamaKas(){
+    <nav class="bg-white border-t border-slate-200 fixed bottom-0 left-0 right-0 z-50 shadow-xl max-w-md mx-auto rounded-t-2xl">
+        <div class="grid grid-cols-4 text-center py-2">
+            <button onclick="switchTab('dashboard')" id="nav-dashboard" class="flex flex-col items-center space-y-1 text-emerald-600 font-bold"><i class="fa-solid fa-receipt text-lg"></i><span class="text-[9px]">Realisasi</span></button>
+            <button onclick="switchTab('budgeting')" id="nav-budgeting" class="flex flex-col items-center space-y-1 text-slate-400"><i class="fa-solid fa-calculator text-lg"></i><span class="text-[9px]">Budgeting</span></button>
+            <button onclick="switchTab('tabungan')" id="nav-tabungan" class="flex flex-col items-center space-y-1 text-slate-400"><i class="fa-solid fa-motorcycle text-lg"></i><span class="text-[9px]">Tabungan</span></button>
+            <button onclick="switchTab('settings')" id="nav-settings" class="flex flex-col items-center space-y-1 text-slate-400"><i class="fa-solid fa-gear text-lg"></i><span class="text-[9px]">Settings</span></button>
+        </div>
+    </nav>
 
-const nama =
-document.getElementById("namaKas").value;
+    <script>
+        let coreDb = { 
+            appName: 'Keuangan Kita',
+            accounts: ['Cash', 'Bank BCA'], 
+            incomeCategories: ['Gaji/Upah', 'Bonus', 'Hasil Usaha', 'Lain-lain'],
+            expenseCategories: ['Makan', 'Transportasi', 'Dapur/Belanja', 'Listrik/Wifi', 'Alokasi Tabungan', 'Lain-lain'],
+            budgets: {}, 
+            transactions: [], 
+            goals: [] 
+        };
+        let currentTxType = 'pemasukan';
 
-if(!nama) return;
+        function formatRupiahInput(el) {
+            let val = el.value.replace(/[^0-9]/g, ''); 
+            if (!val) { el.value = ''; return; }
+            el.value = parseInt(val, 10).toLocaleString('id-ID'); 
+        }
 
-db.appName = nama;
+        function parseRupiah(valStr) {
+            if(!valStr) return 0;
+            return parseInt(valStr.replace(/\./g, ''), 10) || 0;
+        }
 
-simpanDb();
+        function formatRupiah(num) { 
+            return 'Rp ' + parseInt(num || 0).toLocaleString('id-ID'); 
+        }
 
-render();
-}
+        document.getElementById('global-month').value = new Date().toISOString().slice(0, 7);
+        document.getElementById('tx-date').valueAsDate = new Date();
 
-function tambahTransaksi(){
+        function loadDataFromLocalStorage() {
+            const savedData = localStorage.getItem('keuangan_kita_local_db');
+            if (savedData) {
+                try { coreDb = JSON.parse(savedData); } 
+                catch (e) { console.error("Database gagal dibaca", e); }
+            }
+            
+            if(!coreDb.appName) coreDb.appName = 'Keuangan Kita';
+            if(!coreDb.accounts || coreDb.accounts.length === 0) coreDb.accounts = ['Cash'];
+            if(!coreDb.incomeCategories || coreDb.incomeCategories.length === 0) coreDb.incomeCategories = ['Gaji/Upah', 'Lain-lain'];
+            if(!coreDb.expenseCategories || coreDb.expenseCategories.length === 0) coreDb.expenseCategories = ['Makan', 'Alokasi Tabungan', 'Lain-lain'];
+            if(!coreDb.transactions) coreDb.transactions = [];
+            if(!coreDb.budgets) coreDb.budgets = {};
+            if(!coreDb.goals) coreDb.goals = [];
 
-const tanggal =
-document.getElementById("tanggal").value;
+            if(!coreDb.expenseCategories.includes('Alokasi Tabungan')) coreDb.expenseCategories.push('Alokasi Tabungan');
 
-const jenis =
-document.getElementById("jenis").value;
+            document.getElementById('header-app-name').innerText = coreDb.appName;
+            renderCategoryOptions(currentTxType);
+            renderAll();
+        }
 
-const kategori =
-document.getElementById("kategori").value;
+        function saveDb() {
+            localStorage.setItem('keuangan_kita_local_db', JSON.stringify(coreDb));
+            renderAll();
+        }
 
-const jumlah =
-document.getElementById("jumlah").value;
+        function clearAllData() {
+            if(confirm('YAKIN HAPUS SEMUA DATA PERMANEN?')) {
+                localStorage.removeItem('keuangan_kita_local_db');
+                location.reload();
+            }
+        }
 
-if(!tanggal || !jumlah){
-alert("Lengkapi data");
-return;
-}
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            ['dashboard', 'budgeting', 'tabungan', 'settings'].forEach(t => {
+                const nav = document.getElementById(`nav-${t}`);
+                nav.className = t === tabId ? "flex flex-col items-center space-y-1 text-emerald-600 font-bold" : "flex flex-col items-center space-y-1 text-slate-400";
+            });
+        }
 
-db.transactions.unshift({
-id:Date.now(),
-tanggal,
-jenis,
-kategori,
-jumlah:Number(jumlah)
-});
+        function setTxType(type) {
+            currentTxType = type;
+            document.getElementById('btn-tx-masuk').className = type === 'pemasukan' ? "py-2 rounded-xl text-xs font-bold border-2 border-emerald-500 bg-emerald-50 text-emerald-600" : "py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-500";
+            document.getElementById('btn-tx-keluar').className = type === 'pengeluaran' ? "py-2 rounded-xl text-xs font-bold border-2 border-rose-500 bg-rose-50 text-rose-600" : "py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-500";
+            renderCategoryOptions(type);
+        }
 
-document.getElementById("kategori").value="";
-document.getElementById("jumlah").value="";
+        function renderCategoryOptions(type) {
+            const catSelect = document.getElementById('tx-category');
+            catSelect.innerHTML = '';
+            const options = type === 'pemasukan' ? coreDb.incomeCategories : coreDb.expenseCategories;
+            
+            options.forEach(c => { catSelect.innerHTML += `<option value="${c}">${c}</option>`; });
+            checkGoalTarget(); 
+        }
 
-simpanDb();
+        function checkGoalTarget() {
+            const cat = document.getElementById('tx-category').value;
+            const goalContainer = document.getElementById('goal-target-container');
+            if (currentTxType === 'pengeluaran' && cat === 'Alokasi Tabungan') {
+                goalContainer.classList.remove('hidden');
+                const goalSelect = document.getElementById('tx-goal-id');
+                goalSelect.innerHTML = '';
+                if (coreDb.goals.length === 0) {
+                    goalSelect.innerHTML = `<option value="">Belum ada Impian, buat di tab Tabungan!</option>`;
+                } else {
+                    coreDb.goals.forEach(g => {
+                        goalSelect.innerHTML += `<option value="${g.id}">${g.name}</option>`;
+                    });
+                }
+            } else {
+                goalContainer.classList.add('hidden');
+            }
+        }
 
-render();
-}
+        function saveTransaction() {
+            const date = document.getElementById('tx-date').value;
+            const account = document.getElementById('tx-account').value;
+            const category = document.getElementById('tx-category').value;
+            const amount = parseRupiah(document.getElementById('tx-amount').value);
+            const desc = document.getElementById('tx-desc').value;
+            
+            let goalId = null;
+            if (currentTxType === 'pengeluaran' && category === 'Alokasi Tabungan') {
+                goalId = document.getElementById('tx-goal-id').value;
+                if (!goalId) return alert('Silakan buat Impian Tabungan terlebih dahulu di menu Tabungan!');
+            }
 
-function hapusTransaksi(id){
+            if(!date || !amount) return alert('Lengkapi tanggal dan jumlah!');
+            
+            coreDb.transactions.unshift({ id: Date.now().toString(), date, type: currentTxType, account, category, amount, desc, goalId });
+            document.getElementById('tx-amount').value = '';
+            document.getElementById('tx-desc').value = '';
+            saveDb();
+        }
 
-if(!confirm("Hapus transaksi?"))
-return;
+        function deleteTx(id) { if(confirm('Hapus transaksi ini?')) { coreDb.transactions = coreDb.transactions.filter(t => t.id !== id); saveDb(); } }
+        
+        function changeGlobalMonth() { document.getElementById('filter-date').value = ''; renderAll(); }
+        
+        function saveBudget() {
+            const m = document.getElementById('global-month').value;
+            if(!coreDb.budgets[m]) coreDb.budgets[m] = {in: 0, out: 0};
+            coreDb.budgets[m].in = parseRupiah(document.getElementById('budget-in').value);
+            coreDb.budgets[m].out = parseRupiah(document.getElementById('budget-out').value);
+            saveDb();
+        }
 
-db.transactions =
-db.transactions.filter(
-x=>x.id!==id
-);
+        function addGoal() {
+            const name = document.getElementById('goal-name').value;
+            const target = parseRupiah(document.getElementById('goal-target').value);
+            if(!name || !target) return;
+            coreDb.goals.push({ id: Date.now().toString(), name, target });
+            document.getElementById('goal-name').value = '';
+            document.getElementById('goal-target').value = '';
+            saveDb();
+            checkGoalTarget(); 
+        }
+        function deleteGoal(id) { if(confirm('Hapus impian ini?')) { coreDb.goals = coreDb.goals.filter(g => g.id !== id); saveDb(); } }
+        
+        function saveAppName() {
+            const newName = document.getElementById('setting-app-name').value;
+            if(newName) {
+                coreDb.appName = newName;
+                document.getElementById('header-app-name').innerText = coreDb.appName;
+                saveDb();
+                alert('Nama aplikasi berhasil diubah!');
+            }
+        }
 
-simpanDb();
+        function addAccount() {
+            const name = document.getElementById('new-account-name').value;
+            if(!name) return;
+            coreDb.accounts.push(name);
+            document.getElementById('new-account-name').value = '';
+            saveDb();
+        }
+        function deleteAccount(name) { if(confirm(`Hapus akun ${name}?`)) { coreDb.accounts = coreDb.accounts.filter(a => a !== name); saveDb(); } }
 
-render();
-}
+        function addCategory(type) {
+            const inputId = type === 'in' ? 'new-incat-name' : 'new-outcat-name';
+            const val = document.getElementById(inputId).value;
+            if(!val) return;
+            if(type === 'in') coreDb.incomeCategories.push(val);
+            else coreDb.expenseCategories.push(val);
+            document.getElementById(inputId).value = '';
+            saveDb();
+            renderCategoryOptions(currentTxType);
+        }
+        function deleteCategory(type, name) {
+            if(type === 'out' && name === 'Alokasi Tabungan') return alert('Kategori Alokasi Tabungan adalah bawaan sistem, tidak bisa dihapus.');
+            if(confirm(`Hapus kategori ${name}?`)) {
+                if(type === 'in') coreDb.incomeCategories = coreDb.incomeCategories.filter(a => a !== name);
+                else coreDb.expenseCategories = coreDb.expenseCategories.filter(a => a !== name);
+                saveDb();
+                renderCategoryOptions(currentTxType);
+            }
+        }
 
-function render(){
+        function renderSettingsList(containerId, items, deleteType) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            items.forEach(item => {
+                const disableDelete = (deleteType === 'cat-out' && item === 'Alokasi Tabungan');
+                const btnHTML = disableDelete ? 
+                    `<i class="fa-solid fa-lock text-slate-300 px-2 py-1"></i>` : 
+                    `<button onclick="${deleteType === 'account' ? `deleteAccount('${item}')` : `deleteCategory('${deleteType === 'cat-in' ? 'in' : 'out'}', '${item}')`}" class="text-slate-300 hover:text-rose-500 py-1 px-2"><i class="fa-solid fa-circle-minus"></i></button>`;
+                
+                container.innerHTML += `
+                    <div class="flex justify-between items-center py-2.5 text-xs border-t border-slate-100 first:border-0">
+                        <span class="font-medium text-slate-700">${item}</span>
+                        ${btnHTML}
+                    </div>`;
+            });
+        }
 
-document.getElementById("appName")
-.innerText = db.appName;
+        function renderAll() {
+            const m = document.getElementById('global-month').value;
+            const filterDate = document.getElementById('filter-date').value;
+            document.getElementById('budget-month-title').innerText = "Periode " + m;
 
-document.getElementById("namaKas")
-.value = db.appName;
+            document.getElementById('budget-in').value = coreDb.budgets[m]?.in ? coreDb.budgets[m].in.toLocaleString('id-ID') : '';
+            document.getElementById('budget-out').value = coreDb.budgets[m]?.out ? coreDb.budgets[m].out.toLocaleString('id-ID') : '';
+            document.getElementById('setting-app-name').value = coreDb.appName;
 
-let saldo = 0;
+            const accSelect = document.getElementById('tx-account');
+            accSelect.innerHTML = '';
+            coreDb.accounts.forEach(a => { accSelect.innerHTML += `<option value="${a}">${a}</option>`; });
 
-db.transactions.forEach(tx=>{
+            // Hitung Total Saldo (Semua Riwayat Waktu)
+            let totalAllIn = 0;
+            let totalAllOut = 0;
+            coreDb.transactions.forEach(t => {
+                if (t.type === 'pemasukan') totalAllIn += t.amount;
+                else totalAllOut += t.amount;
+            });
+            document.getElementById('dash-total-saldo').innerText = formatRupiah(totalAllIn - totalAllOut);
 
-if(tx.jenis==="masuk"){
-saldo += tx.jumlah;
-}else{
-saldo -= tx.jumlah;
-}
+            // Hitung Realisasi Khusus Bulan Ini
+            let realIn = 0; let realOut = 0;
+            const monthlyTxs = coreDb.transactions.filter(t => t.date.startsWith(m));
+            
+            monthlyTxs.forEach(t => {
+                if(t.type === 'pemasukan') realIn += t.amount;
+                else realOut += t.amount;
+            });
 
-});
+            document.getElementById('dash-real-masuk').innerText = formatRupiah(realIn);
+            document.getElementById('dash-real-keluar').innerText = formatRupiah(realOut);
 
-document.getElementById("saldo")
-.innerText =
-formatRupiah(saldo);
+            const targetIn = coreDb.budgets[m]?.in || 0;
+            const targetOut = coreDb.budgets[m]?.out || 0;
+            const pctIn = targetIn > 0 ? Math.min((realIn / targetIn) * 100, 100) : 0;
+            const pctOut = targetOut > 0 ? Math.min((realOut / targetOut) * 100, 100) : 0;
+            document.getElementById('prog-in-text').innerText = pctIn.toFixed(0) + '%';
+            document.getElementById('prog-in-bar').style.width = pctIn + '%';
+            document.getElementById('prog-out-text').innerText = pctOut.toFixed(0) + '%';
+            document.getElementById('prog-out-bar').style.width = pctOut + '%';
 
-const list =
-document.getElementById(
-"listTransaksi"
-);
+            const listTxContainer = document.getElementById('list-transaksi');
+            listTxContainer.innerHTML = '';
+            const activeDisplayTxs = filterDate ? coreDb.transactions.filter(t => t.date === filterDate) : monthlyTxs;
 
-if(db.transactions.length===0){
+            if(activeDisplayTxs.length === 0) {
+                listTxContainer.innerHTML = `<p class="text-center text-xs text-slate-400 py-6">Tidak ada catatan transaksi.</p>`;
+            } else {
+                activeDisplayTxs.forEach(t => {
+                    const isMasuk = t.type === 'pemasukan';
+                    let catDisplay = t.category;
+                    
+                    if(t.category === 'Alokasi Tabungan' && t.goalId) {
+                        const goalRef = coreDb.goals.find(g => g.id === t.goalId);
+                        if(goalRef) catDisplay = `Tabungan: ${goalRef.name}`;
+                    }
 
-list.innerHTML =
-"Belum ada transaksi";
+                    listTxContainer.innerHTML += `
+                        <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-xs flex justify-between items-center">
+                            <div class="space-y-0.5">
+                                <div class="flex items-center space-x-1.5"><span class="text-xs font-bold text-slate-700">${catDisplay}</span><span class="text-[9px] px-1.5 py-0.2 bg-slate-100 rounded text-slate-500">${t.account}</span></div>
+                                <p class="text-[10px] text-slate-400">${t.date} ${t.desc ? '• '+t.desc : ''}</p>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs font-black ${isMasuk?'text-emerald-600':'text-rose-600'}">${isMasuk?'+':'-'} ${formatRupiah(t.amount)}</span>
+                                <button onclick="deleteTx('${t.id}')" class="text-slate-300 hover:text-rose-500 text-xs p-1"><i class="fa-solid fa-trash-can"></i></button>
+                            </div>
+                        </div>`;
+                });
+            }
 
-return;
-}
+            const goalContainer = document.getElementById('list-goals');
+            goalContainer.innerHTML = '';
+            if(coreDb.goals.length === 0) {
+                goalContainer.innerHTML = `<p class="text-center text-xs text-slate-400 py-4">Belum ada target tabungan.</p>`;
+            } else {
+                coreDb.goals.forEach(g => {
+                    let savingsForThisGoal = 0;
+                    coreDb.transactions.forEach(t => {
+                        if (t.type === 'pengeluaran' && t.category === 'Alokasi Tabungan' && t.goalId === g.id) {
+                            savingsForThisGoal += t.amount;
+                        }
+                    });
 
-list.innerHTML="";
+                    const progressPct = Math.min((savingsForThisGoal / g.target) * 100, 100);
+                    goalContainer.innerHTML += `
+                        <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-2">
+                            <div class="flex justify-between items-center"><h4 class="font-bold text-xs text-slate-700">${g.name}</h4><button onclick="deleteGoal('${g.id}')" class="text-slate-300 hover:text-rose-500 text-xs"><i class="fa-solid fa-trash-can"></i></button></div>
+                            <div class="flex justify-between items-end text-xs"><span class="text-slate-400 text-[10px]">Terkumpul: <b>${formatRupiah(savingsForThisGoal)}</b></span><span class="font-black text-slate-800">${formatRupiah(g.target)}</span></div>
+                            <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden"><div class="bg-indigo-600 h-full" style="width: ${progressPct}%"></div></div>
+                            <span class="block text-right text-[9px] font-bold text-indigo-600">${progressPct.toFixed(1)}% Terpenuhi</span>
+                        </div>`;
+                });
+            }
 
-db.transactions.forEach(tx=>{
+            renderSettingsList('list-accounts', coreDb.accounts, 'account');
+            renderSettingsList('list-incat', coreDb.incomeCategories, 'cat-in');
+            renderSettingsList('list-outcat', coreDb.expenseCategories, 'cat-out');
+        }
 
-list.innerHTML += `
-<div class="tx">
-<div>
-<div><b>${tx.kategori || '-'}</b></div>
-<div class="small">
-${tx.tanggal}
-</div>
-</div>
-
-<div>
-<div class="${
-tx.jenis==="masuk"
-? "masuk"
-: "keluar"
-}">
-${tx.jenis==="masuk" ? "+" : "-"}
-${formatRupiah(tx.jumlah)}
-</div>
-
-<button
-class="delete"
-onclick="hapusTransaksi(${tx.id})">
-Hapus
-</button>
-</div>
-</div>
-`;
-
-});
-
-}
-
-render();
-
-</script>
-
+        window.onload = function() {
+            loadDataFromLocalStorage();
+        };
+    </script>
 </body>
 </html>
